@@ -1,0 +1,21 @@
+version: "3.10"
+services:
+  web:
+    build: .
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - "8000:8010"
+  db:
+    image: postgres:15.3
+    restart: always
+    env_file:
+        - app/.env
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5400:5432" # for debuging purposes
+
+volumes:
+  db_data:
