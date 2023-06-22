@@ -86,8 +86,3 @@ async def main():
 
     answer = await ask_gpt3(prompt, animal)
     print(answer)
-
-
-# Run the main function
-loop = asyncio.get_event_loop()
-loop.run_until_complete(main())

@@ -4,9 +4,16 @@ from typing import Union
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import engine, init_models, maker
+from app.openai import ask_gpt3
+
+
+class AnimalTranslateInput(BaseModel):
+    animal: str
+    text: str
 
 
 @asynccontextmanager
@@ -37,8 +44,9 @@ async def receive_animal():
 
 
 @app.post("/api/v1/get_animal_translate")
-async def receive_animal_speech():
-    return {"Hello": "World"}
+async def receive_animal_speech(received_animal: AnimalTranslateInput):
+    answer = await ask_gpt3(received_animal.text, received_animal.animal)
+    return answer
 
 
 @app.get("/items/{item_id}")
