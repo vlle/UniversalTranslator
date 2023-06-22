@@ -1,10 +1,15 @@
 import asyncio
 import json
+import os
 
 import aiohttp
+from dotenv import load_dotenv
 
 # Set up your API credentials
-api_key = "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"  # Replace with your actual API key
+load_dotenv()
+api_key = os.environ.get("API_KEY")
+if not api_key:
+    exit(1)
 
 # Define the endpoint URL
 url = "https://api.openai.com/v1/chat/completions"
