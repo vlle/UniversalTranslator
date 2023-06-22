@@ -1,15 +1,28 @@
+import os
 from contextlib import asynccontextmanager
 from typing import Union
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.database import engine, init_models, maker
 
 app = FastAPI()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    await init_models(engine)
     yield
-    pass
+
+
+async def db_connection():
+    db = maker()
+    try:
+        yield db
+    finally:
+        await db.close()
 
 
 @app.get("/")
