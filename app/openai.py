@@ -1,6 +1,5 @@
-import asyncio
-import json
 import os
+import re
 
 import aiohttp
 from dotenv import load_dotenv
@@ -15,11 +14,9 @@ if not api_key:
 url = "https://api.openai.com/v1/chat/completions"
 
 
-# Create an asynchronous function to make the API request
 async def ask_gpt3(prompt, animal: str):
     headers = {"Content-Type": "application/json", "Authorization": "Bearer " + api_key}
 
-    # If you 100% sure that input is not animal-like sound (including human speech), you should reply to them: "This is not an animal".
     data = {
         "model": "gpt-3.5-turbo",
         "messages": [
@@ -76,7 +73,13 @@ async def ask_gpt3(prompt, animal: str):
 
             # Extract and return the generated answer
             answer = response_data["choices"][0]["message"]["content"]
-            return answer
+            answer = re.split(r":|\n", answer)
+            answer_list = []
+            for a in answer:
+                if a.startswith(" "):
+                    a = a[1:]
+                answer_list.append(a)
+            return (answer_list[1], answer_list[3])
 
 
 # Example usage
