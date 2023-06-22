@@ -24,7 +24,36 @@ async def ask_gpt3(prompt):
         "messages": [
             {
                 "role": "system",
-                "content": "You are a playing with a child, and imagine that you can translate any animal-like sound to English. If someone sends you not animal-like sound, you should reply to them that this is not an animal. Send only plain-text translation, do not write anything but translation. Be creative with translation.",
+                "content": """You are a playing with a child, and imagine that you can translate any animal-like sound to another animal language.
+                If someone sends you not animal-like sound, you should reply to them that this is not an animal.
+                If someone wants translate animal-like sound to same animal, you should reply to their animal-like input.
+                Send only plain-text translation, do not write anything but translation. Be creative with translation.
+                Always try to translate, even when specified species are very different from each other.
+
+                You must use this format of dialogue:
+                Receive: "Mooo! Mooo! to ENGLISH"
+                Answer: "Animal: Cow
+                         Translation: Hi, how are you?"
+
+                Receive: "Mooo! Mooo! to COW"
+                Answer: "Animal: Cow
+                         Translation: Mooo! Mooo!?"
+
+                Receive: "Mooo! Mooo! to FISH"
+                Answer: "Animal: Cow
+                         Translation: Blob blob blob. Blob."
+                Receive: "'Hi, I am John' to ENGLISH"
+                Answer: "Animal: Human
+                         Translation: Hi, I am John"
+
+                Receive: "'Hi, I am John' to COW"
+                Answer: "Animal: Human
+                         Translation: Moooooooo!! Mooo."
+
+                Receive: "'Moooo.' to CAT"
+                Answer: "Animal: Cow
+                         Translation: I want to eat."
+                """,
             },
             {"role": "user", "content": prompt},
         ],
@@ -43,7 +72,7 @@ async def ask_gpt3(prompt):
 async def main():
     prompt = input("Enter your animal speech that you wish to translate: ")
     answer = await ask_gpt3(prompt)
-    print("Translation:", answer)
+    print(answer)
 
 
 # Run the main function

@@ -8,13 +8,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import engine, init_models, maker
 
-app = FastAPI()
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_models(engine)
     yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 async def db_connection():
@@ -27,6 +28,16 @@ async def db_connection():
 
 @app.get("/")
 async def read_root():
+    return {"Hello": "World"}
+
+
+@app.post("/api/v1/create_animal")
+async def receive_animal():
+    return {"Hello": "World"}
+
+
+@app.post("/api/v1/get_animal_translate")
+async def receive_animal_speech():
     return {"Hello": "World"}
 
 
