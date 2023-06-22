@@ -1,6 +1,7 @@
-# from
+from typing import List
+
 from sqlalchemy import String
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.orm.properties import ForeignKey
 
 
@@ -14,6 +15,7 @@ class Animal(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(30))
     language: Mapped[str] = mapped_column(String(30))
+    translations: Mapped[List["AnimalSpeech"]] = relationship(cascade="all, delete")
 
 
 class AnimalSpeech(Base):

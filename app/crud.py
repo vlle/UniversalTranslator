@@ -19,7 +19,7 @@ class Create(CRUDManager):
 
     async def register_animal_translation(
         self, animal_inp: AnimalTranslateInput, animal_out: AnimalTranslateOutput
-    ):
+    ) -> int:
         possible_names = [
             "Lovely ",
             "Little ",
@@ -51,6 +51,8 @@ class Create(CRUDManager):
                 translated_text=animal_out.text,
             )
             self.session.add(animal_translation)
+            await self.session.flush()
+            return animal_translation.id
 
 
 class Read(CRUDManager):
