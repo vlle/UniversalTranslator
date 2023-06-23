@@ -1,7 +1,8 @@
 from contextlib import asynccontextmanager
-from typing import Annotated, Any, Tuple
+from typing import Annotated, Tuple
 
-from fastapi import Body, Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.crud import Create, Delete, Read, Update
@@ -17,7 +18,7 @@ from app.pydantic_models import (
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_: FastAPI):
     await init_models(engine)
     yield
 
@@ -37,13 +38,30 @@ async def translation(input: TranslateInput):
     language, text = await ask_gpt3(input.text, input.translate_to_language)
     return (
         TranslateOutput(id=-1, translated_from=language, text=text),
-        input.translate_to_language,
+        input,
     )
 
 
-@application.post("/api/v1/create_language")
-async def create_language():
-    return {"Hello": "World"}
+@application.post(
+    "/api/v1/create_language",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        status.HTTP_409_CONFLICT: {"description": "language already exists"},
+        status.HTTP_201_CREATED: {"model": LanguageOutput},
+    },
+)
+async def create_language(
+    language: LanguageInput,
+    session: AsyncSession = Depends(db_connection),
+):
+    create_unit = Create(session)
+    try:
+        await create_unit.register_language(language)
+        return LanguageOutput(language=language.language)
+    except IntegrityError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Language already exists"
+        )
 
 
 @application.post(
@@ -56,26 +74,32 @@ async def create_language():
     },
 )
 async def create_translation(
-    translation_data: Annotated[Tuple[TranslateOutput, str], Depends(translation)],
+    translation_data: Annotated[
+        Tuple[TranslateOutput, TranslateInput], Depends(translation)
+    ],
     session: AsyncSession = Depends(db_connection),
 ) -> TranslateOutput:
     print(translation_data)
-    translation, translate_to = translation_data[0], translation_data[1]
+    translation, origin = translation_data[0], translation_data[1]
+    translate_to = origin.translate_to_language
     if len(translation.translated_from) > 30:
         raise HTTPException(
             status_code=status.HTTP_507_INSUFFICIENT_STORAGE, detail="Length too big"
         )
 
     create_unit = Create(session)
-    await create_unit.register_language(LanguageInput(language=translate_to))
-    await create_unit.register_language(
-        LanguageInput(language=translation.translated_from)
-    )
+    try:
+        await create_unit.register_language(LanguageInput(language=translate_to))
+    except IntegrityError:
+        pass
+    try:
+        await create_unit.register_language(
+            LanguageInput(language=translation.translated_from)
+        )
+    except IntegrityError:
+        pass
     translation.id = await create_unit.register_translation(
-        TranslateInput(
-            translate_to_language=translate_to,
-            text=translation.text,
-        ),
+        origin,
         translation,
     )
     return translation

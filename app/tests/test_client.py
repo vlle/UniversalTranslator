@@ -6,7 +6,7 @@ from app.crud import Delete, Read
 from app.database import init_models
 from app.main import application, db_connection, translation
 from app.models import Base
-from app.pydantic_models import TranslateOutput
+from app.pydantic_models import TranslateInput, TranslateOutput
 
 # Here I am creating test database in memory and overriding the db_connection and animal_translation
 # I know that SQLite3 doesn't support async operations, but for testing measures this should be ok.
@@ -38,16 +38,54 @@ async def get_session():
 
 
 async def override_chatgpt_translation():
-    return (TranslateOutput(id=-1, translated_from="Cat", text="I am kitty"), "kitten")
+    return (
+        TranslateOutput(id=-1, translated_from="Cat", text="I am kitty"),
+        TranslateInput(text="meow", translate_to_language="kitten"),
+    )
 
 
 application.dependency_overrides[translation] = override_chatgpt_translation
 application.dependency_overrides[db_connection] = override_get_db
 
 
-# @pytest.mark.asyncio
-# async def test_create_language():
-#    await init_models(engine)
+@pytest.mark.asyncio
+async def test_create_language(get_session):
+    await drop_tables(engine)
+    await init_models(engine)
+    session = await get_session
+    read_obj = Read(session)
+    assert await read_obj.get_language("Cat") is None
+
+    async with AsyncClient(app=application, base_url="http://127.0.0.1") as ac:
+        response = await ac.post(
+            "/api/v1/create_language",
+            json={"language": "Cat"},
+        )
+
+    assert response.status_code == 201
+    assert await read_obj.get_language("Cat") is not None
+
+
+@pytest.mark.asyncio
+async def test_create_language_conflict(get_session):
+    await drop_tables(engine)
+    await init_models(engine)
+    session = await get_session
+    read_obj = Read(session)
+    assert await read_obj.get_language("Cat") is None
+
+    async with AsyncClient(app=application, base_url="http://127.0.0.1") as ac:
+        await ac.post(
+            "/api/v1/create_language",
+            json={"language": "Cat"},
+        )
+        response = await ac.post(
+            "/api/v1/create_language",
+            json={"language": "Cat"},
+        )
+
+    assert response.status_code == 409
+    assert await read_obj.get_language("Cat") is not None
 
 
 @pytest.mark.asyncio
@@ -65,6 +103,7 @@ async def test_create_translation(get_session):
     read_obj = Read(session)
     assert response.json()["translated_from"] == "Cat"
     assert response.json()["text"] == "I am kitty"
+
     assert await read_obj.get_language("Cat") is not None
     assert await read_obj.get_language("kitten") is not None
 
@@ -89,7 +128,10 @@ async def test_get_language_translation():
     await drop_tables(engine)
     await init_models(engine)
     async with AsyncClient(app=application, base_url="http://127.0.0.1") as ac:
-        response = await ac.post("/api/v1/create_translation")
+        response = await ac.post(
+            "/api/v1/create_translation",
+            json={"text": "I am kitty", "translate_to_language": "kitten"},
+        )
         id = response.json()["id"]
         response = await ac.get(f"/api/v1/get_translation?id={id}")
     assert response.status_code == 200
@@ -97,17 +139,17 @@ async def test_get_language_translation():
     assert response.json()["translated_text"] == "I am kitty"
 
 
-# def test_update_animal():
+# def test_update_language():
 #     pass
 #
 #
-# def test_update_animal_translation():
+# def test_update_translation():
 #     pass
 #
 #
-# def test_delete_animal():
+# def test_delete_language():
 #     pass
 #
 #
-# def test_delete_animal_translation():
+# def test_delete_translation():
 #     pass
