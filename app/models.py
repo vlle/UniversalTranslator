@@ -11,22 +11,21 @@ class Base(DeclarativeBase):
 
 
 class Language(Base):
-    __tablename__ = "animal"
+    __tablename__ = "language"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(30))
-    translations: Mapped[List["AnimalSpeech"]] = relationship(
-        cascade="all, delete", foreign_keys="AnimalSpeech.origin_animal_id"
+    name: Mapped[str] = mapped_column(String(55), primary_key=True)
+    translations: Mapped[List["Translation"]] = relationship(
+        cascade="all, delete", foreign_keys="Translation.origin_language"
     )
     created_at: Mapped[DateTime] = mapped_column(DateTime, default=datetime.utcnow)
     last_updated: Mapped[DateTime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
-class AnimalSpeech(Base):
-    __tablename__ = "animal_speech"
+class Translation(Base):
+    __tablename__ = "translation"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    origin_animal_id: Mapped[int] = mapped_column(ForeignKey("animal.id"))
-    translated_animal_id: Mapped[int] = mapped_column(ForeignKey("animal.id"))
+    origin_language: Mapped[int] = mapped_column(ForeignKey("language.name"))
+    translated_language: Mapped[int] = mapped_column(ForeignKey("language.name"))
     text: Mapped[str] = mapped_column(String(512))
     translated_text: Mapped[str] = mapped_column(String(512))

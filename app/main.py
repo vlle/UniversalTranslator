@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from typing import Annotated
+from typing import Annotated, Any, Tuple
 
 from fastapi import Body, Depends, FastAPI, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,13 +32,16 @@ async def db_connection():
         await db.close()
 
 
-async def animal_translation(text: str = Body(), translate_to_language: str = Body()):
-    language, text = await ask_gpt3(text, translate_to_language)
-    return {"language": language, "text": text}
+async def translation(input: TranslateInput):
+    language, text = await ask_gpt3(input.text, input.translate_to_language)
+    return (
+        TranslateOutput(id=-1, translated_from=language, text=text),
+        input.translate_to_language,
+    )
 
 
-@application.post("/api/v1/create_animal")
-async def create_animal():
+@application.post("/api/v1/create_language")
+async def create_language():
     return {"Hello": "World"}
 
 
@@ -52,28 +55,24 @@ async def create_animal():
     },
 )
 async def create_translation(
-    animal_translation: Annotated[dict, Depends(animal_translation)],
+    translation_data: Tuple[TranslateOutput, Any] = Depends(translation),
     session: AsyncSession = Depends(db_connection),
 ) -> TranslateOutput:
-    if len(animal_translation["language"]) > 30:
+    translation, translated_to = translation_data[0], translation_data[1]
+    if len(translation.translated_from) > 30:
         raise HTTPException(
             status_code=status.HTTP_507_INSUFFICIENT_STORAGE, detail="Length too big"
         )
 
-    translated_speech = TranslateOutput(
-        id=-1,
-        translated_from=animal_translation["language"],
-        text=animal_translation["text"],
-    )
     create_unit = Create(session)
-    translated_speech.id = await create_unit.register_translation(
+    translation.id = await create_unit.register_translation(
         TranslateInput(
-            translate_to_language=animal_translation["language"],
-            text=animal_translation["text"],
+            translate_to_language=translated_to,
+            text=translation.text,
         ),
-        translated_speech,
+        translation,
     )
-    return translated_speech
+    return translation
 
 
 @application.get(
@@ -104,15 +103,15 @@ async def get_language(
     description="Get all languages",
     responses={status.HTTP_200_OK: {"model": list[LanguageOutput]}},
 )
-async def get_all_animals(
+async def get_all_languages(
     session: AsyncSession = Depends(db_connection),
 ) -> list[LanguageOutput]:
     read_unit = Read(session)
     languages = await read_unit.get_all_languages()
-    animals_output: list[LanguageOutput] = [
+    languages_output: list[LanguageOutput] = [
         LanguageOutput(id=language.id, language=language.name) for language in languages
     ]
-    return animals_output
+    return languages_output
 
 
 @application.get(
@@ -134,8 +133,8 @@ async def get_translate(
 
     return SpeechOutput(
         id=translate.id,
-        origin_language_id=translate.origin_animal_id,
-        translated_language_id=translate.translated_animal_id,
+        origin_language_id=translate.origin_language,
+        translated_language_id=translate.translated_language,
         text=translate.text,
         translated_text=translate.translated_text,
     )
