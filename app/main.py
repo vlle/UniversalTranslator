@@ -195,7 +195,15 @@ async def update_translate(
     return {"status": "updated"}
 
 
-@application.delete("/api/v1/delete_translation/{id}")
+@application.delete(
+    "/api/v1/delete_translation/{id}",
+    status_code=status.HTTP_200_OK,
+    description="Delete translation by id",
+    responses={
+        status.HTTP_404_NOT_FOUND: {"description": "Translation not found"},
+        status.HTTP_200_OK: {"status": "deleted"},
+    },
+)
 async def delete_translate(id: int, session: AsyncSession = Depends(db_connection)):
     delete_unit = Delete(session)
     deleted_id = await delete_unit.delete_translate(id)
@@ -204,7 +212,15 @@ async def delete_translate(id: int, session: AsyncSession = Depends(db_connectio
     return {"status": "deleted"}
 
 
-@application.delete("/api/v1/delete_language/{name}")
+@application.delete(
+    "/api/v1/delete_language/{name}",
+    status_code=status.HTTP_200_OK,
+    description="Delete language by name",
+    responses={
+        status.HTTP_404_NOT_FOUND: {"description": "Language not found"},
+        status.HTTP_200_OK: {"status": "deleted"},
+    },
+)
 async def delete_language(name: str, session: AsyncSession = Depends(db_connection)):
     delete_unit = Delete(session)
     read_unit = Read(session)

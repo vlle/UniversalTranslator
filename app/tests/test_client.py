@@ -2,7 +2,7 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 
-from app.crud import Delete, Read
+from app.crud import Read
 from app.database import init_models
 from app.main import application, db_connection, translation
 from app.models import Base
@@ -197,9 +197,3 @@ async def test_delete_language():
         assert response.json()["status"] == "deleted"
         response = await ac.get("api/v1/get_language?name=Cat")
         assert response.status_code == 404
-
-
-#
-#
-# def test_delete_translation():
-#     pass
