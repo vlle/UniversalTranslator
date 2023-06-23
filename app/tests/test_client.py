@@ -5,6 +5,8 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from app.database import init_models
 from app.main import animal_translation, application, db_connection
 
+# Here I am creating test database in memory and overriding the db_connection and animal_translation
+
 TEST_DB_URL = "sqlite+aiosqlite://"
 
 engine = create_async_engine(TEST_DB_URL, echo=True)
@@ -38,16 +40,31 @@ async def test_create_animal_translation():
     async with AsyncClient(app=application, base_url="http://127.0.0.1") as ac:
         response = await ac.post("/api/v1/create_translation")
     assert response.status_code == 201
-    assert response.json()["animal"] == "Cat"
+    assert response.json()["translated_from"] == "Cat"
     assert response.json()["text"] == "I am a cat"
 
 
-# def test_get_animal():
-#     pass
-#
-#
-# def test_get_animal_translation():
-#     pass
+@pytest.mark.asyncio
+async def test_get_animal():
+    await init_models(engine)
+    async with AsyncClient(app=application, base_url="http://127.0.0.1") as ac:
+        response = await ac.get("/api/v1/get_animal?id=1")
+    assert response.status_code == 200
+    assert response.json()["language"] == "Cat"
+
+
+@pytest.mark.asyncio
+async def test_get_animal_translation():
+    await init_models(engine)
+    async with AsyncClient(app=application, base_url="http://127.0.0.1") as ac:
+        response = await ac.post("/api/v1/create_translation")
+        id = response.json()["id"]
+        response = await ac.get(f"/api/v1/get_translation?id={id}")
+    assert response.status_code == 200
+    assert response.json()["id"] == id
+    assert response.json()["translated_text"] == "I am a cat"
+
+
 #
 #
 # def test_update_animal():

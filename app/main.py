@@ -8,9 +8,10 @@ from app.crud import Create, Delete, Read, Update
 from app.database import engine, init_models, maker
 from app.openai import ask_gpt3
 from app.pydantic_models import (
-    AnimalOutput,
-    AnimalTranslateInput,
-    AnimalTranslateOutput,
+    LanguageOutput,
+    SpeechOutput,
+    TranslateInput,
+    TranslateOutput,
 )
 
 
@@ -41,23 +42,33 @@ async def create_animal():
     return {"Hello": "World"}
 
 
-@application.post("/api/v1/create_translation", status_code=status.HTTP_201_CREATED)
+@application.post(
+    "/api/v1/create_translation",
+    status_code=status.HTTP_201_CREATED,
+    description="Create animal translation",
+    responses={
+        status.HTTP_507_INSUFFICIENT_STORAGE: {"description": "Length too big"},
+        status.HTTP_201_CREATED: {"model": TranslateOutput},
+    },
+)
 async def create_translation(
     animal_translation: Annotated[dict, Depends(animal_translation)],
     session: AsyncSession = Depends(db_connection),
-) -> AnimalTranslateOutput:
+) -> TranslateOutput:
     if len(animal_translation["animal"]) > 30:
         raise HTTPException(
             status_code=status.HTTP_507_INSUFFICIENT_STORAGE, detail="Length too big"
         )
 
-    translated_animal = AnimalTranslateOutput(
-        id=-1, animal=animal_translation["animal"], text=animal_translation["text"]
+    translated_animal = TranslateOutput(
+        id=-1,
+        translated_from=animal_translation["animal"],
+        text=animal_translation["text"],
     )
     create_unit = Create(session)
-    translated_animal.id = await create_unit.register_animal_translation(
-        AnimalTranslateInput(
-            wished_animal_language=animal_translation["animal"],
+    translated_animal.id = await create_unit.register_translation(
+        TranslateInput(
+            translate_to_language=animal_translation["animal"],
             text=animal_translation["text"],
         ),
         translated_animal,
@@ -65,39 +76,67 @@ async def create_translation(
     return translated_animal
 
 
-@application.get("/api/v1/get_animal")
-async def get_animal(id: int, session: AsyncSession = Depends(db_connection)):
+@application.get(
+    "/api/v1/get_animal",
+    status_code=status.HTTP_200_OK,
+    description="Get animal by id",
+    responses={
+        status.HTTP_404_NOT_FOUND: {"description": "Animal not found"},
+        status.HTTP_200_OK: {"model": LanguageOutput},
+    },
+)
+async def get_animal(
+    id: int, session: AsyncSession = Depends(db_connection)
+) -> LanguageOutput:
     read_unit = Read(session)
-    animal = await read_unit.get_animal(id)
-    if not animal:
-        raise HTTPException(status_code=404, detail="Animal not found")
-    return animal
+    language = await read_unit.get_language(id)
+    if not language:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Animal not found"
+        )
+
+    return LanguageOutput(id=language.id, language=language.name)
 
 
-@application.get("/api/v1/get_all_animals")
-async def get_all_animals(session: AsyncSession = Depends(db_connection)):
+@application.get(
+    "/api/v1/get_all_languages",
+    status_code=status.HTTP_200_OK,
+    description="Get all languages",
+    responses={status.HTTP_200_OK: {"model": list[LanguageOutput]}},
+)
+async def get_all_animals(
+    session: AsyncSession = Depends(db_connection),
+) -> list[LanguageOutput]:
     read_unit = Read(session)
-    animals = await read_unit.get_all_animals()
-    animals_output: list[AnimalOutput] = [
-        AnimalOutput(id=animal.id, language=animal.language, name=animal.name)
-        for animal in animals
+    languages = await read_unit.get_all_languages()
+    animals_output: list[LanguageOutput] = [
+        LanguageOutput(id=language.id, language=language.name) for language in languages
     ]
     return animals_output
 
 
 @application.get("/api/v1/get_translation")
-async def get_translate(id: int, session: AsyncSession = Depends(db_connection)):
+async def get_translate(
+    id: int, session: AsyncSession = Depends(db_connection)
+) -> SpeechOutput:
     read_unit = Read(session)
-    translate = await read_unit.get_animal_speech(id)
+    translate = await read_unit.get_translation(id)
     if not translate:
         raise HTTPException(status_code=404, detail="Translation not found")
-    return translate
+
+    return SpeechOutput(
+        id=translate.id,
+        origin_language_id=translate.origin_animal_id,
+        translated_language_id=translate.translated_animal_id,
+        text=translate.text,
+        translated_text=translate.translated_text,
+    )
 
 
 @application.put("/api/v1/delete_translation")
 async def update_translate(id: int, session: AsyncSession = Depends(db_connection)):
     read_unit = Read(session)
-    translate = await read_unit.get_animal_speech(id)
+    translate = await read_unit.get_translation(id)
     if not translate:
         raise HTTPException(status_code=404, detail="Translation not found")
     return translate

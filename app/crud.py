@@ -1,10 +1,8 @@
-import random
-
-from sqlalchemy import delete, insert, select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Animal, AnimalSpeech
-from app.pydantic_models import AnimalInput, AnimalTranslateInput, AnimalTranslateOutput
+from app.models import AnimalSpeech, Language
+from app.pydantic_models import LanguageInput, TranslateInput, TranslateOutput
 
 
 class CRUDManager:
@@ -19,50 +17,49 @@ class CRUDManager:
 
 
 class Create(CRUDManager):
-    async def register_animal(self, animal: AnimalInput):
+    async def register_language(self, language: LanguageInput):
         """
-        Register an animal.
+        Register an language.
 
-        This method is used to register an animal in the database.
+        This method is used to register an language in the database.
 
         Returns:
             None
         """
 
-        animal_obj = Animal(name=animal.name, language=animal.language)
+        animal_obj = Language(name=language.language)
         async with self.session, self.session.begin():
             self.session.add(animal_obj)
 
-    async def register_animal_translation(
-        self, animal_inp: AnimalTranslateInput, animal_out: AnimalTranslateOutput
+    async def register_translation(
+        self, inp: TranslateInput, out: TranslateOutput
     ) -> int:
         """
-        Register an animal translation.
+        Register an translation.
 
-        This method is used to register an animal translation in the database.
+        This method is used to register an translation in the database.
 
         Args:
-            animal_inp (AnimalTranslateInput): The input data for animal translation.
-            animal_out (AnimalTranslateOutput): The output data for animal translation.
+            inp (TranslateInput): The input data for translation.
+            out (TranslateOutput): The output data for translation.
 
         Returns:
-            int: The ID of the registered animal translation.
+            int: The ID of the registered translation.
         """
-        animal_received = Animal(name=animal_out.animal, language=animal_out.animal)
-        animal_result = Animal(
-            name=animal_inp.wished_animal_language,
-            language=animal_inp.wished_animal_language,
+        language_received = Language(name=out.translated_from)
+        language_result = Language(
+            name=inp.translate_to_language,
         )
 
         async with self.session, self.session.begin():
-            self.session.add(animal_received)
-            self.session.add(animal_result)
+            self.session.add(language_received)
+            self.session.add(language_result)
             await self.session.flush()
             animal_translation = AnimalSpeech(
-                origin_animal_id=animal_received.id,
-                translated_animal_id=animal_result.id,
-                text=animal_inp.text,
-                translated_text=animal_out.text,
+                origin_animal_id=language_received.id,
+                translated_animal_id=language_result.id,
+                text=inp.text,
+                translated_text=out.text,
             )
             self.session.add(animal_translation)
             await self.session.commit()
@@ -70,48 +67,48 @@ class Create(CRUDManager):
 
 
 class Read(CRUDManager):
-    async def get_animal(self, id: int):
+    async def get_language(self, id: int) -> Language | None:
         """
-        Get an animal by ID.
+        Get an language by ID.
 
-        This method retrieves an animal from the database based on its ID.
+        This method retrieves an language from the database based on its ID.
 
         Args:
-            id (int): The ID of the animal.
+            id (int): The ID of the language.
 
         Returns:
-            Animal: The retrieved animal object.
+            Animal: The retrieved language object | None.
         """
         async with self.session, self.session.begin():
-            return await self.session.get(Animal, id)
+            return await self.session.get(Language, id)
 
-    async def get_all_animals(self):
+    async def get_all_languages(self):
         """
         Get all animals.
 
         This method retrieves all animals from the database.
 
         Returns:
-            List[Animal]: A list of all animal objects.
+            List[Language]: A list of all language objects.
         """
-        stmt = select(Animal).where(Animal.id > 0)
+        stmt = select(Language).where(Language.id > 0)
         async with self.session, self.session.begin():
             return (await self.session.scalars(stmt)).all()
 
-    async def get_all_animal_speech(self):
+    async def get_all_translations(self):
         """
-        Get all animal speeches.
+        Get all language speeches.
 
         This method retrieves all animal speeches from the database.
 
         Returns:
             List[AnimalSpeech]: A list of all animal speech objects.
         """
-        stmt = select(AnimalSpeech).where(Animal.id > 0)
+        stmt = select(AnimalSpeech).where(Language.id > 0)
         async with self.session, self.session.begin():
             return (await self.session.scalars(stmt)).all()
 
-    async def get_animal_speech(self, id: int):
+    async def get_translation(self, id: int) -> AnimalSpeech | None:
         """
         Get an animal speech by ID.
 
@@ -166,7 +163,7 @@ class Delete(CRUDManager):
         Returns:
             id (int): The ID of deleted animal (or None)
         """
-        stmt = delete(Animal).where(Animal.id == id).returning(Animal.id)
+        stmt = delete(Language).where(Language.id == id).returning(Language.id)
         async with self.session, self.session.begin():
             return (await self.session.scalars(stmt)).one_or_none()
 

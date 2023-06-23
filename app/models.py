@@ -10,12 +10,11 @@ class Base(DeclarativeBase):
     pass
 
 
-class Animal(Base):
+class Language(Base):
     __tablename__ = "animal"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(30))
-    language: Mapped[str] = mapped_column(String(30))
     translations: Mapped[List["AnimalSpeech"]] = relationship(
         cascade="all, delete", foreign_keys="AnimalSpeech.origin_animal_id"
     )

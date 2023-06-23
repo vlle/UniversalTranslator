@@ -1,23 +1,29 @@
 from pydantic import BaseModel
 
 
-class AnimalInput(BaseModel):
+class LanguageInput(BaseModel):
     language: str
-    name: str
 
 
-class AnimalOutput(BaseModel):
+class LanguageOutput(BaseModel):
     id: int
     language: str
-    name: str
 
 
-class AnimalTranslateInput(BaseModel):
-    wished_animal_language: str
+class TranslateInput(BaseModel):
+    text: str
+    translate_to_language: str
+
+
+class TranslateOutput(BaseModel):
+    id: int
+    translated_from: str
     text: str
 
 
-class AnimalTranslateOutput(BaseModel):
+class SpeechOutput(BaseModel):
     id: int
-    animal: str
+    origin_language_id: int
+    translated_language_id: int
     text: str
+    translated_text: str
