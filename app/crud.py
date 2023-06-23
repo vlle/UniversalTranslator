@@ -1,5 +1,5 @@
 import sqlalchemy
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.base import exc
 
@@ -129,22 +129,7 @@ class Read(CRUDManager):
 
 
 class Update(CRUDManager):
-    async def update_language(self, id: int):
-        """
-        Update an language.
-
-        This method is used to update an existing language in the database.
-
-        Args:
-            id (int): The ID of the language
-
-        Returns:
-            Language: The retrieved language object.
-        """
-        async with self.session, self.session.begin():
-            pass
-
-    async def update_translation(self, id: int):
+    async def update_translation(self, id: int, new_translation: str):
         """
         Update an translation.
 
@@ -154,7 +139,11 @@ class Update(CRUDManager):
             None
         """
         async with self.session, self.session.begin():
-            pass
+            translation = await self.session.get(Translation, id)
+            if not translation:
+                raise exc.NoResultFound
+
+            translation.translated_text = new_translation
 
 
 class Delete(CRUDManager):

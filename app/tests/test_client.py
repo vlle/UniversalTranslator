@@ -124,6 +124,23 @@ async def test_get_language():
 
 
 @pytest.mark.asyncio
+async def test_get_languages():
+    await drop_tables(engine)
+    await init_models(engine)
+    async with AsyncClient(app=application, base_url="http://127.0.0.1") as ac:
+        await ac.post(
+            "/api/v1/create_translation",
+            json={"text": "I am kitty", "translate_to_language": "kitten"},
+        )
+        response = await ac.get(
+            "/api/v1/get_all_languages",
+        )
+
+    assert len(response.json()) == 2
+    assert response.status_code == 200
+
+
+@pytest.mark.asyncio
 async def test_get_language_translation():
     await drop_tables(engine)
     await init_models(engine)
@@ -139,16 +156,49 @@ async def test_get_language_translation():
     assert response.json()["translated_text"] == "I am kitty"
 
 
-# def test_update_language():
-#     pass
-#
-#
-# def test_update_translation():
-#     pass
-#
-#
-# def test_delete_language():
-#     pass
+@pytest.mark.asyncio
+async def test_update_translation():
+    await drop_tables(engine)
+    await init_models(engine)
+    async with AsyncClient(app=application, base_url="http://127.0.0.1") as ac:
+        response = await ac.post(
+            "/api/v1/create_translation",
+            json={"text": "I am kitty", "translate_to_language": "kitten"},
+        )
+        print(response.json())
+        id = response.json()["id"]
+        response = await ac.get(f"/api/v1/get_translation?id={id}")
+        assert response.json()["translated_text"] == "I am kitty"
+        response = await ac.put(
+            "/api/v1/update_translation",
+            json={"id": id, "new_translation": "new!"},
+        )
+        assert response.status_code == 200
+        response = await ac.get(f"/api/v1/get_translation?id={id}")
+        assert response.json()["translated_text"] == "new!"
+
+
+@pytest.mark.asyncio
+async def test_delete_language():
+    await drop_tables(engine)
+    await init_models(engine)
+    async with AsyncClient(app=application, base_url="http://127.0.0.1") as ac:
+        await ac.post(
+            "/api/v1/create_language",
+            json={"language": "Cat"},
+        )
+        response = await ac.get("api/v1/get_language?name=Cat")
+        assert response.status_code == 200
+        response = await ac.delete(
+            "/api/v1/delete_language/Cat",
+        )
+        assert response.status_code == 200
+        print(response.json())
+        assert response.json()["status"] == "deleted"
+        response = await ac.get("api/v1/get_language?name=Cat")
+        assert response.status_code == 404
+
+
 #
 #
 # def test_delete_translation():

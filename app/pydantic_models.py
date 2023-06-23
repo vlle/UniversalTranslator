@@ -14,6 +14,11 @@ class TranslateInput(BaseModel):
     translate_to_language: str
 
 
+class TranslateUpdate(BaseModel):
+    id: int
+    new_translation: str
+
+
 class TranslateOutput(BaseModel):
     id: int
     translated_from: str

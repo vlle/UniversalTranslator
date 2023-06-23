@@ -14,6 +14,7 @@ from app.pydantic_models import (
     SpeechOutput,
     TranslateInput,
     TranslateOutput,
+    TranslateUpdate,
 )
 
 
@@ -79,9 +80,7 @@ async def create_translation(
     ],
     session: AsyncSession = Depends(db_connection),
 ) -> TranslateOutput:
-    print(translation_data)
     translation, origin = translation_data[0], translation_data[1]
-    translate_to = origin.translate_to_language
     if len(translation.translated_from) > 30:
         raise HTTPException(
             status_code=status.HTTP_507_INSUFFICIENT_STORAGE, detail="Length too big"
@@ -89,7 +88,9 @@ async def create_translation(
 
     create_unit = Create(session)
     try:
-        await create_unit.register_language(LanguageInput(language=translate_to))
+        await create_unit.register_language(
+            LanguageInput(language=origin.translate_to_language)
+        )
     except IntegrityError:
         pass
     try:
@@ -179,24 +180,22 @@ async def get_translate(
         status.HTTP_200_OK: {"status": "updated"},
     },
 )
-async def update_translate(id: int, session: AsyncSession = Depends(db_connection)):
+async def update_translate(
+    new_translation: TranslateUpdate, session: AsyncSession = Depends(db_connection)
+):
     update_unit = Update(session)
-    # translate = await update_unit.get_translation(id)
-    # if not translate:
-    #    raise HTTPException(status_code=404, detail="Translation not found")
+    read_unit = Read(session)
+    is_there_translation = await read_unit.get_translation(new_translation.id)
+    if not is_there_translation:
+        raise HTTPException(status_code=404, detail="Translation not found")
+
+    await update_unit.update_translation(
+        new_translation.id, new_translation.new_translation
+    )
     return {"status": "updated"}
 
 
-@application.put("/api/v1/update_language")
-async def update_language(id: int, session: AsyncSession = Depends(db_connection)):
-    read_unit = Update(session)
-    translate = await read_unit.update_language(id)
-    if not translate:
-        raise HTTPException(status_code=404, detail="Language not found")
-    return {"status": "updated"}
-
-
-@application.delete("/api/v1/delete_translation")
+@application.delete("/api/v1/delete_translation/{id}")
 async def delete_translate(id: int, session: AsyncSession = Depends(db_connection)):
     delete_unit = Delete(session)
     deleted_id = await delete_unit.delete_translate(id)
@@ -205,10 +204,12 @@ async def delete_translate(id: int, session: AsyncSession = Depends(db_connectio
     return {"status": "deleted"}
 
 
-@application.delete("/api/v1/delete_language")
+@application.delete("/api/v1/delete_language/{name}")
 async def delete_language(name: str, session: AsyncSession = Depends(db_connection)):
     delete_unit = Delete(session)
-    deleted_id = await delete_unit.delete_language(name)
-    if not deleted_id:
+    read_unit = Read(session)
+    is_there_language = await read_unit.get_language(name)
+    if not is_there_language:
         raise HTTPException(status_code=404, detail="Language not found")
+    await delete_unit.delete_language(name)
     return {"status": "deleted"}
