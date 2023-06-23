@@ -48,22 +48,18 @@ class Create(CRUDManager):
         Returns:
             int: The ID of the registered translation.
         """
-        language_received = Language(name=out.translated_from)
-        language_result = Language(
-            name=inp.translate_to_language,
-        )
 
         async with self.session, self.session.begin():
-            try:
-                self.session.add(language_received)
-            except exc.IntegrityError:
-                pass
-            try:
-                self.session.add(language_result)
-            except exc.IntegrityError:
-                pass
-
-            await self.session.flush()
+            language_received = (
+                await self.session.scalars(
+                    select(Language).where(Language.name == out.translated_from)
+                )
+            ).one()
+            language_result = (
+                await self.session.scalars(
+                    select(Language).where(Language.name == inp.translate_to_language)
+                )
+            ).one()
             translation = Translation(
                 origin_language=language_received.name,
                 translated_language=language_result.name,
@@ -71,25 +67,24 @@ class Create(CRUDManager):
                 translated_text=out.text,
             )
             self.session.add(translation)
-            await self.session.commit()
-            return translation.id
+        return translation.id
 
 
 class Read(CRUDManager):
-    async def get_language(self, id: int) -> Language | None:
+    async def get_language(self, name: str) -> Language | None:
         """
         Get an language by ID.
 
         This method retrieves an language from the database based on its ID.
 
         Args:
-            id (int): The ID of the language.
+            name (str): The name of the language.
 
         Returns:
-            Animal: The retrieved language object | None.
+            Language: The retrieved language object | None.
         """
         async with self.session, self.session.begin():
-            return await self.session.get(Language, id)
+            return await self.session.get(Language, name)
 
     async def get_all_languages(self):
         """
@@ -111,7 +106,7 @@ class Read(CRUDManager):
         This method retrieves all languages speeches from the database.
 
         Returns:
-            List[AnimalSpeech]: A list of all languages speech objects.
+            List[Translation]: A list of all languages speech objects.
         """
         stmt = select(Translation)
         async with self.session, self.session.begin():
@@ -144,7 +139,7 @@ class Update(CRUDManager):
             id (int): The ID of the language
 
         Returns:
-            Animal: The retrieved language object.
+            Language: The retrieved language object.
         """
         async with self.session, self.session.begin():
             pass
@@ -163,7 +158,7 @@ class Update(CRUDManager):
 
 
 class Delete(CRUDManager):
-    async def delete_language(self, name: int):
+    async def delete_language(self, name: str):
         """
         Delete an language.
 
@@ -172,9 +167,9 @@ class Delete(CRUDManager):
         Returns:
             id (int): The ID of deleted language (or None)
         """
-        stmt = delete(Language).where(Language.name == name).returning(Language.name)
+        stmt = delete(Language).where(Language.name == name)
         async with self.session, self.session.begin():
-            return (await self.session.scalars(stmt)).one_or_none()
+            await self.session.execute(stmt)
 
     async def delete_translate(self, id: int):
         """

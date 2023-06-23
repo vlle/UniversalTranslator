@@ -25,7 +25,7 @@ class Translation(Base):
     __tablename__ = "translation"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    origin_language: Mapped[int] = mapped_column(ForeignKey("language.name"))
-    translated_language: Mapped[int] = mapped_column(ForeignKey("language.name"))
+    origin_language: Mapped[str] = mapped_column(ForeignKey("language.name"))
+    translated_language: Mapped[str] = mapped_column(ForeignKey("language.name"))
     text: Mapped[str] = mapped_column(String(512))
     translated_text: Mapped[str] = mapped_column(String(512))

@@ -6,7 +6,6 @@ class LanguageInput(BaseModel):
 
 
 class LanguageOutput(BaseModel):
-    id: int
     language: str
 
 
@@ -23,7 +22,7 @@ class TranslateOutput(BaseModel):
 
 class SpeechOutput(BaseModel):
     id: int
-    origin_language_id: int
-    translated_language_id: int
+    origin_language: str
+    translated_language: str
     text: str
     translated_text: str
