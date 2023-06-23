@@ -60,39 +60,39 @@ async def create_translation(
             status_code=status.HTTP_507_INSUFFICIENT_STORAGE, detail="Length too big"
         )
 
-    translated_animal = TranslateOutput(
+    translated_speech = TranslateOutput(
         id=-1,
         translated_from=animal_translation["animal"],
         text=animal_translation["text"],
     )
     create_unit = Create(session)
-    translated_animal.id = await create_unit.register_translation(
+    translated_speech.id = await create_unit.register_translation(
         TranslateInput(
             translate_to_language=animal_translation["animal"],
             text=animal_translation["text"],
         ),
-        translated_animal,
+        translated_speech,
     )
-    return translated_animal
+    return translated_speech
 
 
 @application.get(
-    "/api/v1/get_animal",
+    "/api/v1/get_language",
     status_code=status.HTTP_200_OK,
-    description="Get animal by id",
+    description="Get language by id",
     responses={
-        status.HTTP_404_NOT_FOUND: {"description": "Animal not found"},
+        status.HTTP_404_NOT_FOUND: {"description": "Language not found"},
         status.HTTP_200_OK: {"model": LanguageOutput},
     },
 )
-async def get_animal(
+async def get_language(
     id: int, session: AsyncSession = Depends(db_connection)
 ) -> LanguageOutput:
     read_unit = Read(session)
     language = await read_unit.get_language(id)
     if not language:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Animal not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Language not found"
         )
 
     return LanguageOutput(id=language.id, language=language.name)
@@ -115,7 +115,15 @@ async def get_all_animals(
     return animals_output
 
 
-@application.get("/api/v1/get_translation")
+@application.get(
+    "/api/v1/get_translation",
+    status_code=status.HTTP_200_OK,
+    description="Get translation by id",
+    responses={
+        status.HTTP_200_OK: {"model": SpeechOutput},
+        status.HTTP_404_NOT_FOUND: {"description": "Translation not found"},
+    },
+)
 async def get_translate(
     id: int, session: AsyncSession = Depends(db_connection)
 ) -> SpeechOutput:
@@ -133,22 +141,30 @@ async def get_translate(
     )
 
 
-@application.put("/api/v1/delete_translation")
+@application.put(
+    "/api/v1/update_translation",
+    status_code=status.HTTP_200_OK,
+    description="Update translation by id",
+    responses={
+        status.HTTP_404_NOT_FOUND: {"description": "translation not found"},
+        status.HTTP_200_OK: {"status": "updated"},
+    },
+)
 async def update_translate(id: int, session: AsyncSession = Depends(db_connection)):
-    read_unit = Read(session)
-    translate = await read_unit.get_translation(id)
-    if not translate:
-        raise HTTPException(status_code=404, detail="Translation not found")
-    return translate
+    update_unit = Update(session)
+    # translate = await update_unit.get_translation(id)
+    # if not translate:
+    #    raise HTTPException(status_code=404, detail="Translation not found")
+    return {"status": "updated"}
 
 
-@application.put("/api/v1/delete_animal")
-async def update_animal(id: int, session: AsyncSession = Depends(db_connection)):
+@application.put("/api/v1/update_language")
+async def update_language(id: int, session: AsyncSession = Depends(db_connection)):
     read_unit = Update(session)
     translate = await read_unit.update_animal(id)
     if not translate:
-        raise HTTPException(status_code=404, detail="Animal not found")
-    return translate
+        raise HTTPException(status_code=404, detail="Language not found")
+    return {"status": "updated"}
 
 
 @application.delete("/api/v1/delete_translation")
@@ -157,11 +173,13 @@ async def delete_translate(id: int, session: AsyncSession = Depends(db_connectio
     deleted_id = await delete_unit.delete_animal_speech(id)
     if not deleted_id:
         raise HTTPException(status_code=404, detail="Translation not found")
+    return {"status": "deleted"}
 
 
-@application.delete("/api/v1/delete_animal")
-async def delete_animal(id: int, session: AsyncSession = Depends(db_connection)):
+@application.delete("/api/v1/delete_language")
+async def delete_language(id: int, session: AsyncSession = Depends(db_connection)):
     delete_unit = Delete(session)
     deleted_id = await delete_unit.delete_animal(id)
     if not deleted_id:
-        raise HTTPException(status_code=404, detail="Animal not found")
+        raise HTTPException(status_code=404, detail="Language not found")
+    return {"status": "deleted"}

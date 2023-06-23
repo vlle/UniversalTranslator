@@ -45,16 +45,16 @@ async def test_create_animal_translation():
 
 
 @pytest.mark.asyncio
-async def test_get_animal():
+async def test_get_language():
     await init_models(engine)
     async with AsyncClient(app=application, base_url="http://127.0.0.1") as ac:
-        response = await ac.get("/api/v1/get_animal?id=1")
+        response = await ac.get("/api/v1/get_language?id=1")
     assert response.status_code == 200
     assert response.json()["language"] == "Cat"
 
 
 @pytest.mark.asyncio
-async def test_get_animal_translation():
+async def test_get_language_translation():
     await init_models(engine)
     async with AsyncClient(app=application, base_url="http://127.0.0.1") as ac:
         response = await ac.post("/api/v1/create_translation")
