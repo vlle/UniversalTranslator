@@ -80,12 +80,3 @@ async def ask_gpt3(prompt, animal: str):
                     a = a[1:]
                 answer_list.append(a)
             return (answer_list[1], answer_list[3])
-
-
-# Example usage
-async def main():
-    prompt = input("Enter your animal speech that you wish to translate: ")
-    animal = input("Enter your specified language to receive translation for: ")
-
-    answer = await ask_gpt3(prompt, animal)
-    print(answer)

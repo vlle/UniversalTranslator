@@ -1,6 +1,11 @@
 from pydantic import BaseModel
 
 
+class AnimalInput(BaseModel):
+    language: str
+    name: str
+
+
 class AnimalOutput(BaseModel):
     id: int
     language: str
