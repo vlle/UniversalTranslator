@@ -32,9 +32,9 @@ async def db_connection():
         await db.close()
 
 
-async def animal_translation(text: str = Body(), wished_animal_language: str = Body()):
-    animal, text = await ask_gpt3(text, wished_animal_language)
-    return {"animal": animal, "text": text}
+async def animal_translation(text: str = Body(), translate_to_language: str = Body()):
+    language, text = await ask_gpt3(text, translate_to_language)
+    return {"language": language, "text": text}
 
 
 @application.post("/api/v1/create_animal")
@@ -45,7 +45,7 @@ async def create_animal():
 @application.post(
     "/api/v1/create_translation",
     status_code=status.HTTP_201_CREATED,
-    description="Create animal translation",
+    description="Create language translation",
     responses={
         status.HTTP_507_INSUFFICIENT_STORAGE: {"description": "Length too big"},
         status.HTTP_201_CREATED: {"model": TranslateOutput},
@@ -55,20 +55,20 @@ async def create_translation(
     animal_translation: Annotated[dict, Depends(animal_translation)],
     session: AsyncSession = Depends(db_connection),
 ) -> TranslateOutput:
-    if len(animal_translation["animal"]) > 30:
+    if len(animal_translation["language"]) > 30:
         raise HTTPException(
             status_code=status.HTTP_507_INSUFFICIENT_STORAGE, detail="Length too big"
         )
 
     translated_speech = TranslateOutput(
         id=-1,
-        translated_from=animal_translation["animal"],
+        translated_from=animal_translation["language"],
         text=animal_translation["text"],
     )
     create_unit = Create(session)
     translated_speech.id = await create_unit.register_translation(
         TranslateInput(
-            translate_to_language=animal_translation["animal"],
+            translate_to_language=animal_translation["language"],
             text=animal_translation["text"],
         ),
         translated_speech,

@@ -6,6 +6,7 @@ from app.database import init_models
 from app.main import animal_translation, application, db_connection
 
 # Here I am creating test database in memory and overriding the db_connection and animal_translation
+# I know that SQLite3 doesn't support async operations, but for testing measures this should be ok.
 
 TEST_DB_URL = "sqlite+aiosqlite://"
 
