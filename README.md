@@ -4,7 +4,9 @@
 
 ## Стек
 
-- Python3.10, async SQLAlchemy, FastAPI, Docker, Docker-compose, PostgreSQL, pre-commit hooks, OpenAI API.
+- Python3.10, async SQLAlchemy, FastAPI, Docker, Docker-compose, PostgreSQL, psycopg3, pre-commit hooks, OpenAI API.
+- Линтеры: black, isort
+- Настроен GitHub Workflow
 
 ## Фичи
 - CRUD интерфейс
@@ -24,8 +26,7 @@
 Загитклоньте проект, и находясь на одном уровнем с папкой app:
 ``` pytest app/ -v ```
 
-
 ## Демо
 
-- Видео:
-- Задеплоено в https://vlle.ru/api/v1/
+- Видео: [![asciicast](https://asciinema.org/a/uHUhxR2IgNQwKERDord4cgd6g.svg)](https://asciinema.org/a/uHUhxR2IgNQwKERDord4cgd6g)
+- Задеплоено в https://vlle.ru/api/v1/ (отключено https://vle.ru/docs)
