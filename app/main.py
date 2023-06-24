@@ -36,7 +36,13 @@ async def db_connection():
 
 
 async def translation(input: TranslateInput):
-    language, text = await ask_gpt3(input.text, input.translate_to_language)
+    try:
+        language, text = await ask_gpt3(input.text, input.translate_to_language)
+    except KeyError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="OpenAI error occured",
+        )
     return (
         TranslateOutput(id=-1, translated_from=language, text=text),
         input,
