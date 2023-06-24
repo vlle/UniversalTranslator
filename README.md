@@ -4,7 +4,7 @@
 
 ## Стек
 
-- Python3.10, async SQLAlchemy, FastAPI, Docker, Docker-compose, PostgreSQL, OpenAI API.
+- Python3.10, async SQLAlchemy, FastAPI, Docker, Docker-compose, PostgreSQL, pre-commit hooks, OpenAI API.
 
 ## Фичи
 - CRUD интерфейс
