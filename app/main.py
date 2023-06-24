@@ -206,7 +206,7 @@ async def update_translate(
 )
 async def delete_translate(id: int, session: AsyncSession = Depends(db_connection)):
     delete_unit = Delete(session)
-    deleted_id = await delete_unit.delete_translate(id)
+    deleted_id = await delete_unit.delete_translation(id)
     if not deleted_id:
         raise HTTPException(status_code=404, detail="Translation not found")
     return {"status": "deleted"}

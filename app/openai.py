@@ -71,11 +71,13 @@ async def ask_gpt3(prompt, animal: str):
             response_data = await response.json()
 
             # Extract and return the generated answer
-            answer = response_data["choices"][0]["message"]["content"]
-            answer = re.split(r":|\n", answer)
-            answer_list = []
-            for a in answer:
-                if a.startswith(" "):
-                    a = a[1:]
-                answer_list.append(a)
-            return (answer_list[1], answer_list[3])
+        answer = response_data["choices"][0]["message"]["content"]
+
+        # Parsing of ChatGPT answer below
+        answer = re.split(r":|\n", answer)
+        answer_list = []
+        for a in answer:
+            if a.startswith(" "):
+                a = a[1:]
+            answer_list.append(a)
+        return (answer_list[1], answer_list[3])
