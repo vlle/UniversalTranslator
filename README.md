@@ -19,12 +19,39 @@
 
 - Заполните API_KEY в env.example своим ключом OpenAI API.
 
-- ``` cp env.example app/.env ```
-- ``` docker-compose up --build -d ```
+- ```cp env.example app/.env ```
+- ```docker-compose up --build -d ```
 
 ## Как тестировать
 Загитклоньте проект, и находясь на одном уровнем с папкой app:
 ``` pytest app/ -v ```
+
+## Примеры запросов:
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/create_language" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "language": "English"
+  }'
+  ```
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/create_translation" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Hello",
+    "translate_to_language": "French"
+  }'
+  ```
+
+
+```bash
+curl -X GET "http://localhost:8000/api/v1/get_language?name=English"
+```
+
+
+
 
 ## Демо
 
